@@ -29,7 +29,7 @@ public class DemoAction {
     }
 
     public void start() throws Exception {
-        for (int i = 0; i < Integer.MAX_VALUE; i++) {
+        for (int i = 0; i < 1; i++) {
             try {
                 String hello = demoService.sayHello("world" + i);
                 System.out.println("[" + new SimpleDateFormat("HH:mm:ss").format(new Date()) + "] " + hello);
