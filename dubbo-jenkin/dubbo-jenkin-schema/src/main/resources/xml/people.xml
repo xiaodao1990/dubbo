@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:jenkin="http://jenkin.huawei.com/schema/people"
+        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+        http://jenkin.huawei.com/schema/people http://jenkin.huawei.com/schema/people/people.xsd" >
+
+    <jenkin:people id="jenkin" name="君恩" age="18" />
+</beans>
