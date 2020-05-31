@@ -22,7 +22,8 @@
         </layout>
     </appender>
     <root>
-        <level value="INFO"/>
+        <!--修改为DEBUG用于查看Adaptive代理类的源码-->
+        <level value="DEBUG"/>
         <appender-ref ref="CONSOLE"/>
     </root>
 </log4j:configuration>

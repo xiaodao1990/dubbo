@@ -15,6 +15,7 @@
         <module>dubbo-jenkin-spi</module>
         <module>dubbo-jenkin-compiler</module>
         <module>dubbo-jenkin-schema</module>
+        <module>dubbo-jenkin-wrapper</module>
     </modules>
 
 

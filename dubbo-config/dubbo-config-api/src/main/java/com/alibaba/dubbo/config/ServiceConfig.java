@@ -62,7 +62,8 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             .getExtensionLoader(Protocol.class)
             .getAdaptiveExtension();
 
-    private static final ProxyFactory proxyFactory = ExtensionLoader.getExtensionLoader(ProxyFactory.class).getAdaptiveExtension();
+    private static final ProxyFactory proxyFactory = ExtensionLoader.
+            getExtensionLoader(ProxyFactory.class).getAdaptiveExtension();
 
     private static final Map<String, Integer> RANDOM_PORT_MAP = new HashMap<String, Integer>();
     private final List<URL> urls = new ArrayList<URL>();

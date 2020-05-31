@@ -1,0 +1,85 @@
+#### 1、Dubbo服务暴露流程
+```text
+1)、暴露本地服务
+Export dubbo service com.alibaba.dubbo.demo.DemoService to local registry, dubbo version: 2.0.0, current host: 127.0.0.1
+2)、暴露远程服务
+Export dubbo service com.alibaba.dubbo.demo.DemoService to url dubbo://192.168.2.103:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&loadbalance=roundrobin&methods=sayHello&owner=william&pid=2776&side=provider&timestamp=1590931950075, dubbo version: 2.0.0, current host: 127.0.0.1
+Register dubbo service com.alibaba.dubbo.demo.DemoService url dubbo://192.168.2.103:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&loadbalance=roundrobin&methods=sayHello&monitor=dubbo%3A%2F%2F127.0.0.1%3A2181%2Fcom.alibaba.dubbo.registry.RegistryService%3Fapplication%3Ddemo-provider%26dubbo%3D2.0.0%26owner%3Dwilliam%26pid%3D2776%26protocol%3Dregistry%26refer%3Ddubbo%253D2.0.0%2526interface%253Dcom.alibaba.dubbo.monitor.MonitorService%2526pid%253D2776%2526timestamp%253D1590931950179%26registry%3Dzookeeper%26timestamp%3D1590931950042&owner=william&pid=2776&side=provider&timestamp=1590931950075 to registry registry://127.0.0.1:2181/com.alibaba.dubbo.registry.RegistryService?application=demo-provider&dubbo=2.0.0&owner=william&pid=2776&registry=zookeeper&timestamp=1590931950042, dubbo version: 2.0.0, current host: 127.0.0.1
+3)、启动Netty
+Start NettyServer bind /0.0.0.0:20880, export /192.168.2.103:20880, dubbo version: 2.0.0, current host: 127.0.0.1
+4)、打开链接zk
+INFO zookeeper.ClientCnxn: Opening socket connection to server 127.0.0.1/127.0.0.1:2181. Will not attempt to authenticate using SASL (unknown error)
+5)、到zk注册
+Register: dubbo://192.168.2.103:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&loadbalance=roundrobin&methods=sayHello&owner=william&pid=2776&side=provider&timestamp=1590931950075, dubbo version: 2.0.0, current host: 127.0.0.1
+6)、监听zk
+Subscribe: provider://192.168.2.103:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&category=configurators&check=false&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&loadbalance=roundrobin&methods=sayHello&owner=william&pid=2776&side=provider&timestamp=1590931950075, dubbo version: 2.0.0, current host: 127.0.0.1
+Notify urls for subscribe url provider://192.168.2.103:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&category=configurators&check=false&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&loadbalance=roundrobin&methods=sayHello&owner=william&pid=2776&side=provider&timestamp=1590931950075, urls: [empty://192.168.2.103:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&category=configurators&check=false&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&loadbalance=roundrobin&methods=sayHello&owner=william&pid=2776&side=provider&timestamp=1590931950075], dubbo version: 2.0.0, current host: 127.0.0.1
+```
+#### 2、源码解析
+```text
+ServiceBean.onApplicationEvent(ApplicationEvent event)
+    -->export();
+        -->doExport();
+            -->doExportUrls();里面有一个for循环，代表了一个服务可以有多个通信协议，例如 tcp协议 http协议，默认是tcp协议
+                -->loadRegistries(true);//从dubbo.properties里面组装registry的url信息
+                -->doExportUrlsFor1Protocol(protocolConfig, registryURLs);// protocolConfig=<dubbo:protocol name="dubbo" port="20880" id="dubbo" /> registryURLs=registry://127.0.0.1:2181/com.alibaba.dubbo.registry.RegistryService?application=demo-provider&dubbo=2.0.0&owner=william&pid=12080&registry=zookeeper&timestamp=1590937523584
+                    配置不是remote的情况下做本地暴露 (配置为remote，则表示只暴露远程服务)
+                    -->exportLocal(url);
+                        -->proxyFactory.getInvoker(ref, (Class) interfaceClass, local)// proxyFactory=ProxyFactory$Adpative ref=<bean id="demoService" class="com.alibaba.dubbo.demo.provider.DemoServiceImpl"/> interfaceClass=com.alibaba.dubbo.demo.DemoService local=injvm://127.0.0.1/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&loadbalance=roundrobin&methods=sayHello&owner=william&pid=12080&side=provider&timestamp=1590937926755
+                             -->ExtensionLoader.getExtensionLoader(ProxyFactory.class).getExtension("javassist");
+                             -->extension.getInvoker(T proxy, Class<T> type, URL url);// extension=StubProxyFactoryWrapper
+                                -->proxyFactory.getInvoker(proxy, type, url);// proxyFactory=JavassistProxyFactory
+                                    -->Wrapper.getWrapper(com.alibaba.dubbo.demo.provider.DemoServiceImpl)
+                                    -->return new AbstractProxyInvoker<T>(proxy, type, url)
+                        -->protocol.export(invoker);
+                            -->Protocol$Adpative.export
+                                -->ExtensionLoader.getExtensionLoader(Protocol.class).getExtension("injvm");
+                                    -->extension.export(arg0);// extension=ProtocolFilterWrapper
+                                        -->buildInvokerChain(invoker, Constants.SERVICE_FILTER_KEY, Constants.PROVIDER);// 创建8个filter
+                                        -->rpotocol.export(); // protocol=ProtocolListenerWrapper
+                                            -->protocol.export(invoker);// protocol=InjvmProtocol
+                                                -->return new InjvmExporter<T>(invoker, invoker.getUrl().getServiceKey(), exporterMap);
+                                                -->本地暴露目的：exporterMap.put(key, this);// this.invoker = invoker, key=com.alibaba.dubbo.demo.DemoService, this=InjvmExporter
+                    如果配置不是local则暴露为远程服务.(配置为local，则表示只暴露本地服务)
+                protocol.export(invoker);// protocol=Protocol$Adpative
+                    -->ExtensionLoader.getExtensionLoader(Protocol.class).getExtension("registry");
+                    -->extension.export(arg0);// extension=ProtocolFilterWrapper
+                        -->protocol.export(invoker);// protocol=ProtocolListenerWrapper
+                            -->protocol.export(invoker);// protocol=RegistryProtocol
+                                -->doLocalExport(originInvoker);
+                                    -->getCacheKey(originInvoker);// 读取key
+                                    -->protocol.export(invokerDelegete);// protocol=Protocol$Adpative
+                                        -->ExtensionLoader.getExtensionLoader(Protocol.class).getExtension("dubbo");
+                                        -->extension.export(arg0);// extension=ProtocolFilterWrapper
+                                            -->buildInvokerChain();// 创建8个filter
+                                            -->protocol.export();// protocol=ProtocolListenerWrapper
+                                                -->protocol.export(invoker);// protocol=DubboProtocol
+                                                    -->serviceKey(url);// 组装key=com.alibaba.dubbo.demo.DemoService:20880
+                                                    -->new DubboExporter<T>(invoker, key, exporterMap);// this.invoker=invoker, this.key=key, this.exporterMap=exporterMap
+                                                    -->exporterMap.put(key, exporter);// key=com.alibaba.dubbo.demo.DemoService:20880, this=DubboExporter
+                                                    -->openServer(url);
+                                                        -->createServer(url);
+                                                            -->Exchangers.bind(url, requestHandler);// exchanger是一个信息交换层
+                                                                -->getExchanger(url)
+                                                                    -->getExchanger("header");
+                                                                        -->ExtensionLoader.getExtensionLoader(Exchanger.class).getExtension("header");
+                                                                -->HeaderExchanger.bind(url, handler);
+                                                                    -->new HeaderExchangeHandler(handler)//this.handler = handler
+                                                                    -->new DecodeHandler();
+                                                                        -->new AbstractChannelHandlerDelegate();// this.handler = handler;
+                                                                    -->Transporters.bind(URL url, ChannelHandler... handlers)
+                                                                        -->getTransporter();
+                                                                            -->ExtensionLoader.getExtensionLoader(Transporter.class).getAdaptiveExtension();
+                                                                        -->getTransporter().bind(url, handler);// getTransporter()=Transporter$Adpative
+                                                                            -->ExtensionLoader.getExtensionLoader(Transporter.class).getExtension("netty");
+                                                                            -->extension.bind(arg0, arg1); // extension=NettyTransporter
+                                                                                -->new NettyServer(url, listener);
+                                                                        
+```
+
+#### 3、暴露本地服务和暴露远程服务的区别？
+```text
+1、暴露本地服务：指暴露在用一个JVM里面，不用通过调用zk来进行远程通信。
+例如：在同一个服务，自己调用自己的接口，就没必要进行网络IP连接来通信。
+2、暴露远程服务：指暴露给远程客户端的IP和端口号，通过网络来实现通信。
+```
