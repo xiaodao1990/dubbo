@@ -15,14 +15,19 @@ getAdaptiveExtension()// 为cachedAdaptiveInstance赋值
                     -->loadFile[META-INF/dubbo/internal/]
             -->createAdaptiveExtensionClass();// 自动生成和编译一个动态的adpative类，这个类是一个代理类
                 -->createAdaptiveExtensionClassCode();
+                    -->ExtensionLoader.getExtensionLoader(Compiler.class).getAdaptiveExtension()
+                    -->compiler.compile(code, classLoader);
+        -->injectExtension()// 作用：进入IOC反转控制模式，实现动态注入                   
 ```
 
 #### 关于loadFile的一些细节
 ```text
 目的：通过读取配置文件META-INF/dubbo/internal/com.alibaba.dubbo.rpc.Protocol中的内容，存储在缓存变量中
 cachedAdaptiveClass// 如果该类上含有adative注解就赋值，例如AdaptiveExtensionFactory，而例如Protocol在这个环节是没有的。
-cachedWrapperClasses// 只有该类上没有adative注解，并且构造函数中包含目标接口的类型。
+cachedWrapperClasses// ConcurrentHashSet 只有该类上没有adative注解，并且构造函数中包含目标接口的类型。
     例如protocol里面的spi就只有ProtocolFilterWrapper和ProtocolListenerWrapper能命中
 cachedActivates// 剩余的类，包含Activate注解，缓存进cachedActivates
 cachedNames// 除前面缓存过的类，其余类都缓存在这里
 ```
+#### Protocol的实现类
+![avatar](./pic/003_dubbo.png) 
