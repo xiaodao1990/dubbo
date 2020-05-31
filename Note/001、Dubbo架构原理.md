@@ -1,5 +1,7 @@
 ### Dubbo架构原理
 ![avatar](./pic/001_dubbo.png)
+### Dubbo SPI实现使用的设计模式
+![avatar](./pic/014_dubbo.png)
 
 ### Dubbo项目编译
 ```text
