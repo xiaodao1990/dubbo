@@ -91,7 +91,7 @@ ServiceBean.onApplicationEvent(ApplicationEvent event)
                                                                             -->this.heartbeat = 60000;// 心跳包间隔时间
                                                                             -->this.heartbeatTimeout = 180000;// 心跳超时时间
                                                                             -->startHeatbeatTimer();// 启动心跳定时器 采用了线程池，如果断开就心跳重连。 
----------------------------------------------------连接zk-----------------------------------------------------------                                                                            
+---------------------------------------------------连接zk---------------------------------------------------------------                                                                            
                                     -->getRegistry(originInvoker); // 连接zk    
                                         -->registryFactory.getRegistry(registryUrl);// registryFactory=RegistryFactory$Adpative
                                             -->ExtensionLoader.getExtensionLoader(RegistryFactory.class).getExtension("zookeeper");
@@ -112,7 +112,17 @@ ServiceBean.onApplicationEvent(ApplicationEvent event)
                                                                         -->new ZkClient(url.getBackupAddress()); // 连接ZK url.getBackupAddress()=127.0.0.1:2181 
                                                                         -->client.subscribeStateChanges(new IZkStateListener());// 订阅的目的：连接断开，重连
                                                              -->zkClient.addStateListener(new StateListener())
-                                                                -->recover();// 重连                                  
+                                                                -->recover();// 重连 
+---------------------------------------------------到zk注册，创建节点---------------------------------------------------
+                                    -->registry.register(registedProviderUrl);// registedProviderUrl=dubbo://192.168.2.103:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&loadbalance=roundrobin&methods=sayHello&owner=william&pid=8876&side=provider&timestamp=1591052907483
+                                        -->AbstractRegistry.register(URL url);// registered.add(url);
+                                        -->FailbackRegistry.register(URL url);
+                                            -->doRegister(url);// 向服务器端发送注册请求
+                                                -->ZookeeperRegistry.doRegister(URL url);
+                                                    -->zkClient.create(toUrlPath(url), url.getParameter(Constants.DYNAMIC_KEY, true));// toUrlPath(url)=/dubbo/com.alibaba.dubbo.demo.DemoService/providers/dubbo://192.168.2.103:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&loadbalance=roundrobin&methods=sayHello&owner=william&pid=8876&side=provider&timestamp=1591052907483
+                                                        -->AbstractZookeeperClient.create(String path, boolean ephemeral);
+                                                            -->createEphemeral(path);// 创建临时节点 /dubbo/com.alibaba.dubbo.demo.DemoService/providers/dubbo://192.168.2.103:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&loadbalance=roundrobin&methods=sayHello&owner=william&pid=8876&side=provider&timestamp=1591052907483
+                                                            -->createPersistent(path); // 创建持久会节点 1)、/dubbo 2)、/dubbo/com.alibaba.dubbo.demo.DemoService 3)、/dubbo/com.alibaba.dubbo.demo.DemoService/providers                                                       
 ```
 
 #### 3、暴露本地服务和暴露远程服务的区别？
@@ -121,3 +131,9 @@ ServiceBean.onApplicationEvent(ApplicationEvent event)
 例如：在同一个服务，自己调用自己的接口，就没必要进行网络IP连接来通信。
 2、暴露远程服务：指暴露给远程客户端的IP和端口号，通过网络来实现通信。
 ```
+
+#### 4、节点创建过程
+ * ![avatar](./pic/030_dubbo.png) 
+ * ![avatar](./pic/031_dubbo.png) 
+ * ![avatar](./pic/032_dubbo.png) 
+ * ![avatar](./pic/033_dubbo.png)
