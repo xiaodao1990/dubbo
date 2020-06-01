@@ -53,12 +53,14 @@ ServiceBean.onApplicationEvent(ApplicationEvent event)
                                             -->extension.export(arg0);// extension=ProtocolFilterWrapper
                                                 -->buildInvokerChain();// 创建8个filter
                                                 -->protocol.export();// protocol=ProtocolListenerWrapper
+---------------------------------------------------1、netty服务暴露的开始-----------------------------------------------
                                                     -->protocol.export(invoker);// protocol=DubboProtocol
                                                         -->serviceKey(url);// 组装key=com.alibaba.dubbo.demo.DemoService:20880
                                                         -->new DubboExporter<T>(invoker, key, exporterMap);// this.invoker=invoker, this.key=key, this.exporterMap=exporterMap
                                                         -->exporterMap.put(key, exporter);// key=com.alibaba.dubbo.demo.DemoService:20880, this=DubboExporter
                                                         -->openServer(url);
                                                             -->createServer(url);
+---------------------------------------------------2、信息交换层exchanger开始-------------------------------------------
                                                                 -->Exchangers.bind(url, requestHandler);// exchanger是一个信息交换层
                                                                     -->getExchanger(url)
                                                                         -->getExchanger("header");
@@ -67,6 +69,7 @@ ServiceBean.onApplicationEvent(ApplicationEvent event)
                                                                         -->new HeaderExchangeHandler(handler)//this.handler = handler
                                                                         -->new DecodeHandler();
                                                                             -->new AbstractChannelHandlerDelegate();// this.handler = handler;
+---------------------------------------------------3、网络传输层transporter---------------------------------------------
                                                                         -->Transporters.bind(URL url, ChannelHandler... handlers)
                                                                             -->getTransporter();
                                                                                 -->ExtensionLoader.getExtensionLoader(Transporter.class).getAdaptiveExtension();
@@ -74,7 +77,20 @@ ServiceBean.onApplicationEvent(ApplicationEvent event)
                                                                                 -->ExtensionLoader.getExtensionLoader(Transporter.class).getExtension("netty");
                                                                                 -->extension.bind(arg0, arg1); // extension=NettyTransporter
                                                                                     -->new NettyServer(url, listener);
-                                                                        
+                                                                                        -->AbstractPeer(URL url, ChannelHandler handler);// this.url = url; this.handler = handler;
+                                                                                        -->AbstractEndpoint(URL url, ChannelHandler handler);// this.codec; this.timeout=1000(请求超时时间); this.connectTimeout=3000(连接超时时间);
+                                                                                        -->AbstractServer(URL url, ChannelHandler handler);// bindAddress(设置绑定地址); idleTimeout=600s
+---------------------------------------------------3、打开端口，暴露Netty服务-------------------------------------------
+                                                                                            -->doOpen();
+                                                                                                -->new NioServerSocketChannelFactory(boss, worker, 3);// 设置boss、worker的线程池，线程的个数为3
+                                                                                                -->new ServerBootstrap(channelFactory);// 实例化服务启动帮助类
+                                                                                                -->设置解码器、编码器、handler
+                                                                                                -->bootstrap.bind(getBindAddress());// 绑定服务端的IP和端口，完成服务端的启动，监听客户端的连接。
+                                                                        -->new HeaderExchangeServer(NettyServer);
+                                                                            -->this.server = NettyServer;
+                                                                            -->this.heartbeat = 60000;// 心跳包间隔时间
+                                                                            -->this.heartbeatTimeout = 180000;// 心跳超时时间
+                                                                            -->startHeatbeatTimer();// 启动心跳定时器 采用了线程池，如果断开就心跳重连。                                                                       
 ```
 
 #### 3、暴露本地服务和暴露远程服务的区别？
