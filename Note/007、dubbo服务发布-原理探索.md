@@ -80,7 +80,7 @@ ServiceBean.onApplicationEvent(ApplicationEvent event)
                                                                                         -->AbstractPeer(URL url, ChannelHandler handler);// this.url = url; this.handler = handler;
                                                                                         -->AbstractEndpoint(URL url, ChannelHandler handler);// this.codec; this.timeout=1000(请求超时时间); this.connectTimeout=3000(连接超时时间);
                                                                                         -->AbstractServer(URL url, ChannelHandler handler);// bindAddress(设置绑定地址); idleTimeout=600s
----------------------------------------------------3、打开端口，暴露Netty服务-------------------------------------------
+---------------------------------------------------4、打开端口，暴露Netty服务-------------------------------------------
                                                                                             -->doOpen();
                                                                                                 -->new NioServerSocketChannelFactory(boss, worker, 3);// 设置boss、worker的线程池，线程的个数为3
                                                                                                 -->new ServerBootstrap(channelFactory);// 实例化服务启动帮助类
@@ -90,7 +90,29 @@ ServiceBean.onApplicationEvent(ApplicationEvent event)
                                                                             -->this.server = NettyServer;
                                                                             -->this.heartbeat = 60000;// 心跳包间隔时间
                                                                             -->this.heartbeatTimeout = 180000;// 心跳超时时间
-                                                                            -->startHeatbeatTimer();// 启动心跳定时器 采用了线程池，如果断开就心跳重连。                                                                       
+                                                                            -->startHeatbeatTimer();// 启动心跳定时器 采用了线程池，如果断开就心跳重连。 
+---------------------------------------------------连接zk-----------------------------------------------------------                                                                            
+                                    -->getRegistry(originInvoker); // 连接zk    
+                                        -->registryFactory.getRegistry(registryUrl);// registryFactory=RegistryFactory$Adpative
+                                            -->ExtensionLoader.getExtensionLoader(RegistryFactory.class).getExtension("zookeeper");
+                                            -->extension.getRegistry(arg0);// extension=ZookeeperRegistryFactory
+                                                -->AbstractRegistryFactory.getRegistry(arg0);// 创建一个Registry,保存到注册中心集合 Map<RegistryAddress, Registry> REGISTRIES
+                                                    -->createRegistry(url);// ZookeeperRegistryFactory.createRegistry(URL url) 
+                                                        -->new ZookeeperRegistry(url, zookeeperTransporter); 
+                                                            -->AbstractRegistry(URL url);// this.registryUrl = url; 
+                                                                -->loadProperties(); // 把C:\Users\Administrator/.dubbo/dubbo-registry-127.0.0.1.cache文件中的内容加载为properties
+                                                                -->notify(url.getBackupUrls());// 不做任何事  
+                                                            -->FailbackRegistry(URL url); // retryPeriod=5000(重试时间间隔)     
+                                                                -->retryExecutor.scheduleWithFixedDelay(new Runnable());// 建立线程池，检测并连接注册中心,如果失败了就重连 
+                                                            -->zookeeperTransporter.connect(url);// zookeeperTransporter=ZookeeperTransporter$Adpative
+                                                                -->ExtensionLoader.getExtensionLoader(ZookeeperTransporter.class).getExtension("zkclient");  
+                                                                -->extension.connect(arg0);// extension=ZkclientZookeeperTransporter    
+                                                                    -->new ZkclientZookeeperClient(url);
+                                                                        -->AbstractZookeeperClient(URL url);// this.url = url;
+                                                                        -->new ZkClient(url.getBackupAddress()); // 连接ZK url.getBackupAddress()=127.0.0.1:2181 
+                                                                        -->client.subscribeStateChanges(new IZkStateListener());// 订阅的目的：连接断开，重连
+                                                             -->zkClient.addStateListener(new StateListener())
+                                                                -->recover();// 重连                                  
 ```
 
 #### 3、暴露本地服务和暴露远程服务的区别？
