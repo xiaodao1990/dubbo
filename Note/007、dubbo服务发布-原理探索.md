@@ -41,39 +41,39 @@ ServiceBean.onApplicationEvent(ApplicationEvent event)
                                                 -->return new InjvmExporter<T>(invoker, invoker.getUrl().getServiceKey(), exporterMap);
                                                 -->本地暴露目的：exporterMap.put(key, this);// this.invoker = invoker, key=com.alibaba.dubbo.demo.DemoService, this=InjvmExporter
                     如果配置不是local则暴露为远程服务.(配置为local，则表示只暴露本地服务)
-                protocol.export(invoker);// protocol=Protocol$Adpative
-                    -->ExtensionLoader.getExtensionLoader(Protocol.class).getExtension("registry");
-                    -->extension.export(arg0);// extension=ProtocolFilterWrapper
-                        -->protocol.export(invoker);// protocol=ProtocolListenerWrapper
-                            -->protocol.export(invoker);// protocol=RegistryProtocol
-                                -->doLocalExport(originInvoker);
-                                    -->getCacheKey(originInvoker);// 读取key
-                                    -->protocol.export(invokerDelegete);// protocol=Protocol$Adpative
-                                        -->ExtensionLoader.getExtensionLoader(Protocol.class).getExtension("dubbo");
-                                        -->extension.export(arg0);// extension=ProtocolFilterWrapper
-                                            -->buildInvokerChain();// 创建8个filter
-                                            -->protocol.export();// protocol=ProtocolListenerWrapper
-                                                -->protocol.export(invoker);// protocol=DubboProtocol
-                                                    -->serviceKey(url);// 组装key=com.alibaba.dubbo.demo.DemoService:20880
-                                                    -->new DubboExporter<T>(invoker, key, exporterMap);// this.invoker=invoker, this.key=key, this.exporterMap=exporterMap
-                                                    -->exporterMap.put(key, exporter);// key=com.alibaba.dubbo.demo.DemoService:20880, this=DubboExporter
-                                                    -->openServer(url);
-                                                        -->createServer(url);
-                                                            -->Exchangers.bind(url, requestHandler);// exchanger是一个信息交换层
-                                                                -->getExchanger(url)
-                                                                    -->getExchanger("header");
-                                                                        -->ExtensionLoader.getExtensionLoader(Exchanger.class).getExtension("header");
-                                                                -->HeaderExchanger.bind(url, handler);
-                                                                    -->new HeaderExchangeHandler(handler)//this.handler = handler
-                                                                    -->new DecodeHandler();
-                                                                        -->new AbstractChannelHandlerDelegate();// this.handler = handler;
-                                                                    -->Transporters.bind(URL url, ChannelHandler... handlers)
-                                                                        -->getTransporter();
-                                                                            -->ExtensionLoader.getExtensionLoader(Transporter.class).getAdaptiveExtension();
-                                                                        -->getTransporter().bind(url, handler);// getTransporter()=Transporter$Adpative
-                                                                            -->ExtensionLoader.getExtensionLoader(Transporter.class).getExtension("netty");
-                                                                            -->extension.bind(arg0, arg1); // extension=NettyTransporter
-                                                                                -->new NettyServer(url, listener);
+                    protocol.export(invoker);// protocol=Protocol$Adpative
+                        -->ExtensionLoader.getExtensionLoader(Protocol.class).getExtension("registry");
+                        -->extension.export(arg0);// extension=ProtocolFilterWrapper
+                            -->protocol.export(invoker);// protocol=ProtocolListenerWrapper
+                                -->protocol.export(invoker);// protocol=RegistryProtocol
+                                    -->doLocalExport(originInvoker);
+                                        -->getCacheKey(originInvoker);// 读取key
+                                        -->protocol.export(invokerDelegete);// protocol=Protocol$Adpative
+                                            -->ExtensionLoader.getExtensionLoader(Protocol.class).getExtension("dubbo");
+                                            -->extension.export(arg0);// extension=ProtocolFilterWrapper
+                                                -->buildInvokerChain();// 创建8个filter
+                                                -->protocol.export();// protocol=ProtocolListenerWrapper
+                                                    -->protocol.export(invoker);// protocol=DubboProtocol
+                                                        -->serviceKey(url);// 组装key=com.alibaba.dubbo.demo.DemoService:20880
+                                                        -->new DubboExporter<T>(invoker, key, exporterMap);// this.invoker=invoker, this.key=key, this.exporterMap=exporterMap
+                                                        -->exporterMap.put(key, exporter);// key=com.alibaba.dubbo.demo.DemoService:20880, this=DubboExporter
+                                                        -->openServer(url);
+                                                            -->createServer(url);
+                                                                -->Exchangers.bind(url, requestHandler);// exchanger是一个信息交换层
+                                                                    -->getExchanger(url)
+                                                                        -->getExchanger("header");
+                                                                            -->ExtensionLoader.getExtensionLoader(Exchanger.class).getExtension("header");
+                                                                    -->HeaderExchanger.bind(url, handler);
+                                                                        -->new HeaderExchangeHandler(handler)//this.handler = handler
+                                                                        -->new DecodeHandler();
+                                                                            -->new AbstractChannelHandlerDelegate();// this.handler = handler;
+                                                                        -->Transporters.bind(URL url, ChannelHandler... handlers)
+                                                                            -->getTransporter();
+                                                                                -->ExtensionLoader.getExtensionLoader(Transporter.class).getAdaptiveExtension();
+                                                                            -->getTransporter().bind(url, handler);// getTransporter()=Transporter$Adpative
+                                                                                -->ExtensionLoader.getExtensionLoader(Transporter.class).getExtension("netty");
+                                                                                -->extension.bind(arg0, arg1); // extension=NettyTransporter
+                                                                                    -->new NettyServer(url, listener);
                                                                         
 ```
 
