@@ -122,7 +122,38 @@ ServiceBean.onApplicationEvent(ApplicationEvent event)
                                                     -->zkClient.create(toUrlPath(url), url.getParameter(Constants.DYNAMIC_KEY, true));// toUrlPath(url)=/dubbo/com.alibaba.dubbo.demo.DemoService/providers/dubbo://192.168.2.103:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&loadbalance=roundrobin&methods=sayHello&owner=william&pid=8876&side=provider&timestamp=1591052907483
                                                         -->AbstractZookeeperClient.create(String path, boolean ephemeral);
                                                             -->createEphemeral(path);// 创建临时节点 /dubbo/com.alibaba.dubbo.demo.DemoService/providers/dubbo://192.168.2.103:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&loadbalance=roundrobin&methods=sayHello&owner=william&pid=8876&side=provider&timestamp=1591052907483
-                                                            -->createPersistent(path); // 创建持久会节点 1)、/dubbo 2)、/dubbo/com.alibaba.dubbo.demo.DemoService 3)、/dubbo/com.alibaba.dubbo.demo.DemoService/providers                                                       
+                                                            -->createPersistent(path); // 创建持久会节点 1)、/dubbo 2)、/dubbo/com.alibaba.dubbo.demo.DemoService 3)、/dubbo/com.alibaba.dubbo.demo.DemoService/providers
+---------------------------------------------------订阅zk---------------------------------------------------------------                                                  
+                                    -->registry.subscribe(overrideSubscribeUrl, overrideSubscribeListener);// registry=ZookeeperRegistry
+                                        -->AbstractRegistry.subscribe(URL url, NotifyListener listener);// 将listener添加到ConcurrentMap<URL, Set<NotifyListener>> subscribed中，其中key=provider://192.168.2.103:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&category=configurators&check=false&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&loadbalance=roundrobin&methods=sayHello&owner=william&pid=15844&side=provider&timestamp=1591098147139，value=new ConcurrentHashSet<NotifyListener>()。listener存储到ConcurrentHashSet中
+                                        -->FailbackRegistry.subscribe(URL url, NotifyListener listener);
+                                            -->doSubscribe(url, listener);// 向服务器端发送订阅请求。
+                                                -->ZookeeperRegistry.doSubscribe(final URL url, final NotifyListener listener)
+                                                    -->new ChildListener();// 将new ChildListener()添加到new ConcurrentHashMap<NotifyListener, ChildListener>()，其中key=listener，value=new ChildListener()，缓存到ConcurrentMap<URL, ConcurrentMap<NotifyListener, ChildListener>> zkListeners中key=provider://192.168.2.103:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&category=configurators&check=false&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&loadbalance=roundrobin&methods=sayHello&owner=william&pid=15844&side=provider&timestamp=1591098147139
+                                                        -->实现了childChanged(String parentPath, List<String> currentChilds)
+                                                            -->ZookeeperRegistry.this.notify(url, listener, toUrlsWithEmpty(url, parentPath, currentChilds));
+                                                    AAA)、先创建持久化节点/dubbo/com.alibaba.dubbo.demo.DemoService/configurators        
+                                                    -->zkClient.create(path, false); // 创建持久节点 path=/dubbo/com.alibaba.dubbo.demo.DemoService/configurators
+                                                    -->zkClient.addChildListener(path, zkListener);// zkClient=ZkclientZookeeperClient
+                                                        -->createTargetChildListener(path, listener);
+                                                            -->ZkclientZookeeperClient.createTargetChildListener(String path, final ChildListener listener);// ZookeeperRegistry.doSubscribe中实例化的ChildListener
+                                                                -->new IZkChildListener();
+                                                                    CCC)、收到订阅回调后，交给FailbackRegistry.notify处理
+                                                                    -->实现了handleChildChange(String parentPath, List<String> currentChilds);// parentPath=/dubbo/com.alibaba.dubbo.demo.DemoService/configurators
+                                                                        -->添加ZookeeperRegistry.doSubscribe中实例化的ChildListener.childChanged(parentPath, currentChilds);
+                                                                            -->ZookeeperRegistry.this.notify(url, listener, toUrlsWithEmpty(url, parentPath, currentChilds));// 3={empty://192.168.2.103:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-provider&category=configurators&check=false&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&loadbalance=roundrobin&methods=sayHello&owner=william&pid=2340&side=provider&timestamp=1591103054207}
+                                                                                -->FailbackRegistry.notifynotify(URL url, NotifyListener listener, List<URL> urls)
+                                                                                    -->doNotify(url, listener, urls);
+                                                                                        -->AbstractRegistry.notify(URL url, NotifyListener listener, List<URL> urls)
+                                                                                            -->saveProperties(url);//把服务端的注册url信息更新到C:\Users\Administrator\.dubbo\dubbo-registry-192.168.48.117.cache
+                                                                                                -->registryCacheExecutor.execute(new SaveProperties(version));// //采用线程池来处理
+                                                                                            -->listener.notify(categoryList); // listener=RegistryProtocol$OverrideListener
+                                                                                                -->URL originUrl = RegistryProtocol.this.getProviderUrl(originInvoker);
+                                                                                                   -->RegistryProtocol.this.doChangeLocalExport(originInvoker, newUrl);//对修改了url的invoker重新export
+                                                        BBB)、对path=/dubbo/com.alibaba.dubbo.demo.DemoService/configurators 进行订阅                                           
+                                                        -->addTargetChildListener(path, targetListener); 
+                                                            -->ZkclientZookeeperClient.addTargetChildListener(String path, final IZkChildListener listener)
+                                                                -->client.subscribeChildChanges(path, listener);// /dubbo/com.alibaba.dubbo.demo.DemoService/configurators                                                                                                               
 ```
 
 #### 3、暴露本地服务和暴露远程服务的区别？
