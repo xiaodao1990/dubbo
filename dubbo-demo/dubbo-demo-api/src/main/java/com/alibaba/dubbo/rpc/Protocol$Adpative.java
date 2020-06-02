@@ -31,7 +31,9 @@ public class Protocol$Adpative implements com.alibaba.dubbo.rpc.Protocol {
         String extName = (url.getProtocol() == null ? "dubbo" : url.getProtocol());
         if (extName == null)
             throw new IllegalStateException("Fail to get extension(com.alibaba.dubbo.rpc.Protocol) name from url(" + url.toString() + ") use keys([protocol])");
-        com.alibaba.dubbo.rpc.Protocol extension = (com.alibaba.dubbo.rpc.Protocol) ExtensionLoader.getExtensionLoader(com.alibaba.dubbo.rpc.Protocol.class).getExtension(extName);
+        com.alibaba.dubbo.rpc.Protocol extension = (com.alibaba.dubbo.rpc.Protocol) ExtensionLoader
+                .getExtensionLoader(com.alibaba.dubbo.rpc.Protocol.class)
+                .getExtension(extName);
         return extension.refer(arg0, arg1);
     }
 }
