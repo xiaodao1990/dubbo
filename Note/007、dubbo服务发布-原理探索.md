@@ -36,7 +36,7 @@ ServiceBean.onApplicationEvent(ApplicationEvent event)
                                 -->ExtensionLoader.getExtensionLoader(Protocol.class).getExtension("injvm");
                                     -->extension.export(arg0);// extension=ProtocolFilterWrapper
                                         -->buildInvokerChain(invoker, Constants.SERVICE_FILTER_KEY, Constants.PROVIDER);// 创建8个filter
-                                        -->rpotocol.export(); // protocol=ProtocolListenerWrapper
+                                        -->protocol.export(); // protocol=ProtocolListenerWrapper
                                             -->protocol.export(invoker);// protocol=InjvmProtocol
                                                 -->return new InjvmExporter<T>(invoker, invoker.getUrl().getServiceKey(), exporterMap);
                                                 -->本地暴露目的：exporterMap.put(key, this);// this.invoker = invoker, key=com.alibaba.dubbo.demo.DemoService, this=InjvmExporter
