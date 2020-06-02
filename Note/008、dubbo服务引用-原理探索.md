@@ -18,6 +18,17 @@ ReferenceBean.getObject();// 框架真正进行服务引用的入口
                                         -->registry.register(subscribeUrl.addParameters(Constants.CATEGORY_KEY, Constants.CONSUMERS_CATEGORY,Constants.CHECK_KEY, String.valueOf(false)));// 参数=consumer://192.168.43.156/com.alibaba.dubbo.demo.DemoService?application=demo-consumer&category=consumers&check=false&dubbo=2.0.0&interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello&pid=16464&side=consumer&timestamp=1591115228461
                                         // 订阅zk的节点，和服务端发布一样（省略代码）。对节点/dubbo/com.alibaba.dubbo.demo.DemoService/providers，/dubbo/com.alibaba.dubbo.demo.DemoService/configurators，/dubbo/com.alibaba.dubbo.demo.DemoService/routers作监听(订阅)
                                         -->directory.subscribe(subscribeUrl.addParameter(Constants.CATEGORY_KEY, Constants.PROVIDERS_CATEGORY + "," + Constants.CONFIGURATORS_CATEGORY + "," + Constants.ROUTERS_CATEGORY));// 参数=consumer://192.168.43.156/com.alibaba.dubbo.demo.DemoService?application=demo-consumer&category=providers,configurators,routers&check=false&dubbo=2.0.0&interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello&pid=16464&side=consumer&timestamp=1591115228461
+                                            -->notify(url, listener, urls);
+                                                -->FailbackRegistry.notify(URL url, NotifyListener listener, List<URL> urls);
+                                                    -->doNotify(url, listener, urls);
+                                                        -->AbstractRegistry.notify(URL url, NotifyListener listener, List<URL> urls);
+                                                            -->saveProperties(url);把服务端的注册url信息更新到C:\Users\Administrator\.dubbo\dubbo-registry-192.168.48.117.cache
+                                                                -->-->registryCacheExecutor.execute(new SaveProperties(version));//采用线程池来处理
+                                                            -->listener.notify(categoryList);// listener=RegistryDirectory
+                                                                -->refreshInvoker(invokerUrls);
+                                                                    // 最终目的：刷新Map<String, Invoker<T>> urlInvokerMap 对象
+                                                                    -->destroyUnusedInvokers(oldUrlInvokerMap, newUrlInvokerMap);// 关闭未使用的Invoker
+                                                            
                                         
                                         
                                         
