@@ -1,3 +1,6 @@
+#### 0、Dubbo服务发布 整体架构图
+![avatar](./pic/034_dubbo.png)
+
 #### 1、Dubbo服务暴露流程
 ```text
 1)、暴露本地服务
