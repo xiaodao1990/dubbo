@@ -28,7 +28,21 @@ ReferenceBean.getObject();// 框架真正进行服务引用的入口
                                                                 -->refreshInvoker(invokerUrls);
                                                                     // 最终目的：刷新Map<String, Invoker<T>> urlInvokerMap 对象
                                                                     -->destroyUnusedInvokers(oldUrlInvokerMap, newUrlInvokerMap);// 关闭未使用的Invoker
-                                                            
+                                        -->cluster.join(directory);// cluster=Cluster$Adpative
+                                            -->ExtensionLoader.getExtensionLoader(Cluster.class).getExtension("failover");
+                                            -->extension.join(arg0);// extension=MockClusterWrapper
+                                                -->this.cluster.join(directory)
+                                                    -->return new FailoverClusterInvoker<T>(directory);
+                                                -->new MockClusterInvoker<T>(directory, this.cluster.join(directory));
+                -->proxyFactory.getProxy(invoker);//  proxyFactory=ProxyFactory$Adpative, invoker=MockClusterInvoker
+                    -->ExtensionLoader.getExtensionLoader(ProxyFactory.class).getExtension("javassist"); 
+                    -->extension.getProxy(arg0);// extension=StubProxyFactoryWrapper     
+                        -->proxyFactory.getProxy(invoker);// proxyFactory=JavassistProxyFactory, invoker=MockClusterInvoker                                    
+                            -->getProxy(invoker, interfaces);// invoker=MockClusterInvoker, interfaces=Class{com.alibaba.dubbo.demo.DemoService,com.alibaba.dubbo.rpc.service.EchoService}
+                                -->JavassistProxyFactory.getProxy(Invoker<T> invoker, Class<?>[] interfaces);
+                                    -->new InvokerInvocationHandler(invoker);//invoker=MockClusterInvoker采用jdk自带的InvocationHandler，创建InvokerInvocationHandler对象。
+                                    -->Proxy.getProxy(interfaces).newInstance(new InvokerInvocationHandler(invoker));
+                                        -->Proxy.getProxy(interfaces);
                                         
                                         
                                         
