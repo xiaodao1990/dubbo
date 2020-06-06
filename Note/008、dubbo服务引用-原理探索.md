@@ -25,8 +25,8 @@ ReferenceBean.getObject();// 框架真正进行服务引用的入口
                                                             -->saveProperties(url);把服务端的注册url信息更新到C:\Users\Administrator\.dubbo\dubbo-registry-192.168.48.117.cache
                                                                 -->-->registryCacheExecutor.execute(new SaveProperties(version));//采用线程池来处理
                                                             -->listener.notify(categoryList);// listener=RegistryDirectory
+                                                                // 最终目的：刷新Map<String, Invoker<T>> urlInvokerMap 对象,刷新Map<String, List<Invoker<T>>> methodInvokerMap对象
                                                                 -->refreshInvoker(invokerUrls);
-                                                                    // 最终目的：刷新Map<String, Invoker<T>> urlInvokerMap 对象
                                                                     -->destroyUnusedInvokers(oldUrlInvokerMap, newUrlInvokerMap);// 关闭未使用的Invoker
                                         -->cluster.join(directory);// cluster=Cluster$Adpative
                                             -->ExtensionLoader.getExtensionLoader(Cluster.class).getExtension("failover");
