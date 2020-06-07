@@ -6,6 +6,8 @@
 ![avatar](./pic/034_dubbo.png)
 ### Dubbo集群容错、负载均衡架构图 
 ![avatar](./pic/036_dubbo.png)
+### Dubbo网络通信结构图
+![avatar](./pic/039_dubbo.png)
 
 ### Dubbo项目编译
 ```text

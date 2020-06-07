@@ -30,7 +30,8 @@ demoService.sayHello("world" + i);// demoService为DemoService的动态代理对
                                             -->doSelect(invokers, url, invocation);
                                                 -->RoundRobinLoadBalance.doSelect(List<Invoker<T>> invokers, URL url, Invocation invocation);
                                                     -->invokers.get(currentSequence % length);// 取模轮循
-                            -->invoker.invoke(invocation);
+                            -->Result result = invoker.invoke(invocation);
+-------------------------------------------------------网络通信-consumer发送原理----------------------------------------
                                 -->InvokerWrapper.invoke(Invocation invocation);
                                     -->ProtocolFilterWrapper.invoke(invocation);// invoker=ProtocolFilterWrapper
                                         -->ConsumerContextFilter.invoke(next, invocation);// filter=ConsumerContextFilter,next=ProtocolFilterWrapper
@@ -51,6 +52,64 @@ demoService.sayHello("world" + i);// demoService为DemoService的动态代理对
                                                                                                     -->NettyChannel.send(message, sent);
                                                                                                         -->ChannelFuture future = NioClientSocketChannel.write(message);
                                                                             -->DefaultFuture.get();// 最终的目的：通过netty的channel发送网络数据
+```
+
+#### 客户端怎样连接到服务端的？
+```text
+// 见服务引用-原理探索 订阅zk的节点，和服务端发布一样（省略代码）。对节点/dubbo/com.alibaba.dubbo.demo.DemoService/providers，/dubbo/com.alibaba.dubbo.demo.DemoService/configurators，/dubbo/com.alibaba.dubbo.demo.DemoService/routers作监听(订阅)
+directory.subscribe(subscribeUrl.addParameter(Constants.CATEGORY_KEY, Constants.PROVIDERS_CATEGORY + "," + Constants.CONFIGURATORS_CATEGORY + "," + Constants.ROUTERS_CATEGORY));// 参数=consumer://192.168.43.156/com.alibaba.dubbo.demo.DemoService?application=demo-consumer&category=providers,configurators,routers&check=false&dubbo=2.0.0&interface=com.alibaba.dubbo.demo.DemoService&methods=sayHello&pid=16464&side=consumer&timestamp=1591115228461
+    // 此处省略一些步骤...
+    -->refreshInvoker(invokerUrls);
+        -->toInvokers(invokerUrls);// 将URL列表转成Invoker列表
+            -->RegistryDirectory.toInvokers(List<URL> urls);
+                -->invoker = new InvokerDelegete<T>(protocol.refer(serviceType, url), url, providerUrl);
+                    -->Protocol$Adpative.refer(java.lang.Class arg0, com.alibaba.dubbo.common.URL arg1)
+                        -->extension.refer(arg0, arg1);
+                            -->ProtocolFilterWrapper.refer(Class<T> type, URL url)
+                                -->protocol.refer(type, url)
+                                    -->ProtocolListenerWrapper.refer(Class<T> type, URL url)
+                                        -->protocol.refer(type, url)
+                                            -->DubboProtocol.refer(Class<T> serviceType, URL url)
+                                                -->getClients(url);
+                                                    -->getSharedClient(url);
+                                                        // dubbo://192.168.2.103:20880/com.alibaba.dubbo.demo.DemoService?anyhost=true&application=demo-consumer&check=false&dubbo=2.0.0&generic=false&interface=com.alibaba.dubbo.demo.DemoService&loadbalance=roundrobin&methods=sayHello&monitor=dubbo://192.168.2.103:2181/com.alibaba.dubbo.registry.RegistryService?application=demo-consumer&dubbo=2.0.0&pid=12420&protocol=registry&refer=dubbo=2.0.0&interface=com.alibaba.dubbo.monitor.MonitorService&pid=12420&timestamp=1591530067929&registry=zookeeper&timestamp=1591530067910&owner=william&pid=12420&side=consumer&timestamp=1591530067564
+                                                        -->initClient(url);
+                                                            -->client = Exchangers.connect(url, requestHandler);
+                                                                -->getExchanger(url).connect(url, handler);// getExchanger(url)=HeaderExchanger
+                                                                    -->HeaderExchanger.connect(URL url, ExchangeHandler handler)
+                                                                        -->new HeaderExchangeClient(Transporters.connect(url, new DecodeHandler(new HeaderExchangeHandler(handler))));
+                                                                            -->Transporters.connect(URL url, ChannelHandler... handlers);
+                                                                                -->getTransporter().connect(url, handler);// getTransporter()=Transporter$Adpative
+                                                                                    -->extension.connect(arg0, arg1);// extension=NettyTransporter
+                                                                                        -->new NettyClient(url, listener);
+                                                                                            --AbstractPeer(URL url, ChannelHandler handler)// this.url = url; this.handler = handler;
+                                                                                            -->AbstractEndpoint(URL url, ChannelHandler handler)// this.codec; this.timeout=1000(请求超时时间); this.connectTimeout=3000(连接超时时间);
+                                                                                                -->AbstractClient(URL url, ChannelHandler handler)
+                                                                                                    -->doOpen();// 创建连接服务端的NioClientSocketChannelFactory
+                                                                                                    protected void doOpen() throws Throwable {
+                                                                                                        NettyHelper.setNettyLoggerFactory();
+                                                                                                        bootstrap = new ClientBootstrap(channelFactory);
+                                                                                                        // config
+                                                                                                        // @see org.jboss.netty.channel.socket.SocketChannelConfig
+                                                                                                        bootstrap.setOption("keepAlive", true);
+                                                                                                        bootstrap.setOption("tcpNoDelay", true);
+                                                                                                        bootstrap.setOption("connectTimeoutMillis", getTimeout());
+                                                                                                        final NettyHandler nettyHandler = new NettyHandler(getUrl(), this);
+                                                                                                        bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
+                                                                                                            public ChannelPipeline getPipeline() {
+                                                                                                                NettyCodecAdapter adapter = new NettyCodecAdapter(getCodec(), getUrl(), NettyClient.this);
+                                                                                                                ChannelPipeline pipeline = Channels.pipeline();
+                                                                                                                pipeline.addLast("decoder", adapter.getDecoder());
+                                                                                                                pipeline.addLast("encoder", adapter.getEncoder());
+                                                                                                                pipeline.addLast("handler", nettyHandler);
+                                                                                                                return pipeline;
+                                                                                                            }
+                                                                                                        });
+                                                                                                    }
+                                                                                                    -->connect(); 
+                                                                                                        -->doConnect();// NettyClient.doConnect()
+                                                                                                            // 目的：连接到服务端 getConnectAddress()=/192.168.2.103:20880
+                                                                                                            -->ChannelFuture future = bootstrap.connect(getConnectAddress());
 ```
 
 #### 灰度发布例子：

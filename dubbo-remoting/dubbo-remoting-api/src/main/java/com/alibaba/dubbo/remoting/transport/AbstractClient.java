@@ -258,7 +258,7 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
         channel.send(message, sent);
     }
 
-    protected void connect() throws RemotingException {
+    protected void  connect() throws RemotingException {
         connectLock.lock();
         try {
             if (isConnected()) {
