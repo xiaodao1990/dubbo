@@ -35,23 +35,21 @@ demoService.sayHello("world" + i);// demoService为DemoService的动态代理对
                                 -->InvokerWrapper.invoke(Invocation invocation);
                                     -->ProtocolFilterWrapper.invoke(invocation);// invoker=ProtocolFilterWrapper
                                         -->ConsumerContextFilter.invoke(next, invocation);// filter=ConsumerContextFilter,next=ProtocolFilterWrapper
-                                            -->ProtocolFilterWrapper.invoke(invocation);
-                                                -->FutureFilter.invoke(next, invocation);// next=ProtocolFilterWrapper
-                                                    -->ProtocolFilterWrapper.invoke(invocation);
-                                                        -->MonitorFilter.invoke(next, invocation);// next=ListenerInvokerWrapper
-                                                            -->ListenerInvokerWrapper.invoke(invocation); 
-                                                                -->AbstractInvoker.invoke(invocation);
-                                                                    -->doInvoke(invocation);
-                                                                        -->DubboInvoker.doInvoke(final Invocation invocation)
-                                                                            -->ReferenceCountExchangeClient.request(inv, timeout);
-                                                                                -->HeaderExchangeClient.request(request, timeout);
-                                                                                    -->HeaderExchangeChannel.request(request, timeout);
-                                                                                        -->NettyClient.send(req);
-                                                                                            -->AbstractPeer.send(Object message);
-                                                                                                -->send(message, url.getParameter(Constants.SENT_KEY, false));
-                                                                                                    -->NettyChannel.send(message, sent);
-                                                                                                        -->ChannelFuture future = NioClientSocketChannel.write(message);
-                                                                            -->DefaultFuture.get();// 最终的目的：通过netty的channel发送网络数据
+                                            -->FutureFilter.invoke(next, invocation);// next=ProtocolFilterWrapper
+                                                -->MonitorFilter.invoke(next, invocation);// next=ListenerInvokerWrapper
+                                                    -->ListenerInvokerWrapper.invoke(invocation); 
+                                                        -->AbstractInvoker.invoke(invocation);
+                                                            -->doInvoke(invocation);
+                                                                -->DubboInvoker.doInvoke(final Invocation invocation)
+                                                                    -->ReferenceCountExchangeClient.request(inv, timeout);
+                                                                        -->HeaderExchangeClient.request(request, timeout);
+                                                                            -->HeaderExchangeChannel.request(request, timeout);
+                                                                                -->NettyClient.send(req);
+                                                                                    -->AbstractPeer.send(Object message);
+                                                                                        -->send(message, url.getParameter(Constants.SENT_KEY, false));
+                                                                                            -->NettyChannel.send(message, sent);
+                                                                                                -->ChannelFuture future = NioClientSocketChannel.write(message);
+                                                                    -->DefaultFuture.get();// 最终的目的：通过netty的channel发送网络数据
 ```
 
 #### 客户端怎样连接到服务端的？

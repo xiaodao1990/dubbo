@@ -36,3 +36,34 @@ NettyHandler.messageReceived(ChannelHandlerContext ctx, MessageEvent e)
                                             -->ChannelFuture future = channel.write(message);// NioAcceptedSocketChannel
                                         
 ```
+
+#### Consumer对消息的接收
+```text
+NettyHandler.messageReceived(ChannelHandlerContext ctx, MessageEvent e)   
+    -->handler.received(channel, e.getMessage());// NettyChannel [channel=[id: 0x068044f4, /192.168.2.103:56159 => /192.168.2.103:20880]]
+        -->AbstractPeer.received(Channel ch, Object msg);
+            -->MultiMessageHandler.received(Channel channel, Object message)
+                -->HeartbeatHandler.received(Channel channel, Object message)
+                    -->AllChannelHandler.received(Channel channel, Object message)
+                        -->cexecutor.execute(new ChannelEventRunnable(channel, handler, ChannelState.RECEIVED, message));// 线程池 执行线程
+                            -->DecodeHandler.received(Channel channel, Object message)
+                                -->HeaderExchangeHandler.received(Channel channel, Object message)
+                                    -->handleResponse(channel, (Response) message);
+                                        -->DefaultFuture.received(channel, response);
+                                            -->future.doReceived(response);// future=DefaultFuture
+                                            // 异步边同步机制
+                                            private void doReceived(Response res) {
+                                                lock.lock();
+                                                try {
+                                                    response = res;
+                                                    if (done != null) {
+                                                        done.signal();
+                                                    }
+                                                } finally {
+                                                    lock.unlock();
+                                                }
+                                                if (callback != null) {
+                                                    invokeCallback(callback);
+                                                }
+                                            }        
+```
