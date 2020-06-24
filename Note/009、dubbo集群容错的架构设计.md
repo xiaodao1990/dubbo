@@ -50,6 +50,33 @@ demoService.sayHello("world" + i);// demoService为DemoService的动态代理对
                                                                                             -->NettyChannel.send(message, sent);
                                                                                                 -->ChannelFuture future = NioClientSocketChannel.write(message);
                                                                     -->DefaultFuture.get();// 最终的目的：通过netty的channel发送网络数据
+                                                                        -->DefaultFuture.get(timeout);
+                                                                                // consumer发送数据后，同步等待返回结果核心代码
+                                                                                public Object get(int timeout) throws RemotingException {
+                                                                                    if (timeout <= 0) {
+                                                                                        timeout = Constants.DEFAULT_TIMEOUT;
+                                                                                    }
+                                                                                    if (!isDone()) {
+                                                                                        long start = System.currentTimeMillis();
+                                                                                        lock.lock();
+                                                                                        try {
+                                                                                            while (!isDone()) {
+                                                                                                done.await(timeout, TimeUnit.MILLISECONDS);
+                                                                                                if (isDone() || System.currentTimeMillis() - start > timeout) {
+                                                                                                    break;
+                                                                                                }
+                                                                                            }
+                                                                                        } catch (InterruptedException e) {
+                                                                                            throw new RuntimeException(e);
+                                                                                        } finally {
+                                                                                            lock.unlock();
+                                                                                        }
+                                                                                        if (!isDone()) {
+                                                                                            throw new TimeoutException(sent > 0, channel, getTimeoutMessage(false));
+                                                                                        }
+                                                                                    }
+                                                                                    return returnFromResponse();
+                                                                                }
 ```
 
 #### 客户端怎样连接到服务端的？
